@@ -154,7 +154,7 @@ body.embed header nav, body.embed .banner{display:none}
   function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
   function render(text){
     let noAnswer=text.includes('[[NO_ANSWER]]');
-    let related=[]; text=text.replace(/\n?\s*RELATED:\s*(.+)\s*$/i,(m,r)=>{related=r.split('|').map(x=>x.trim()).filter(Boolean).slice(0,3);return '';});
+    let related=[]; text=text.replace(/\n?\s*\**\s*RELATED:?\**:?\s*(.+)\s*$/i,(m,r)=>{related=r.split('|').map(x=>x.trim()).filter(Boolean).slice(0,3);return '';});
     let t=esc(text.replace('[[NO_ANSWER]]','').trim());
     const seen=new Map();
     t=t.replace(/\[([A-Za-z0-9-]+) p\.(\d+)\]/g,(m,id,p)=>{
