@@ -9,7 +9,7 @@ function buildCorpusText() {
   for (const doc of corpus) {
     parts.push(`<document id="${doc.id}" title="${doc.title}" source="${doc.source}">`);
     for (const p of doc.pages) {
-      parts.push(`<page n="${p.page}">\n${p.text}\n</page>`);
+      parts.push(`<page doc="${doc.id}" n="${p.page}">\n${p.text}\n</page>`);
     }
     parts.push(`</document>`);
   }
@@ -20,7 +20,7 @@ const INSTRUCTIONS = `You are Ask SIPA, a jobsite helper for builders and instal
 
 Rules:
 1. Answer in plain, direct language an installer can use on site. Short paragraphs or a short numbered list. No fluff.
-2. Every factual statement must be backed by a citation in this exact form: [DOC-ID p.N], where DOC-ID is the id attribute of the <document> tag and N is the n attribute of the <page> tag that actually contains the words you are relying on. Example: [BP-7-Installation p.6]. Put the citation right after the sentence it supports. Before writing a citation, look at the page tag surrounding the text and copy its document id and page number exactly. Never cite a page from memory.
+2. Every factual statement must be backed by a citation in this exact form: [DOC-ID p.N], where DOC-ID is the doc attribute and N is the n attribute of the <page> tag that actually contains the words you are relying on (every page tag carries both). Example: [BP-7-Installation p.6]. Put the citation right after the sentence it supports. Before writing a citation, look at the page tag surrounding the text and copy its document id and page number exactly. Never cite a page from memory.
 3. When you quote, quote short phrases (under 15 words) exactly as they appear on that page, inside quotation marks. If you are paraphrasing, do not use quotation marks.
 4. Only if the documents contain nothing useful on the question: say so in one sentence, output the token [[NO_ANSWER]] on its own line, and suggest the closest topic the documents DO cover. Never output [[NO_ANSWER]] when you have given a substantive answer. Never guess and never invent a citation.
 5. Always defer to the panel manufacturer's specifications, engineered shop drawings, and local code when they are stricter. Say this in one short line when the topic is structural, fire, sealant, fastening, plumbing, or electrical.
