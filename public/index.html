@@ -55,19 +55,50 @@ textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padd
 .foot label{cursor:pointer}
 .typing{color:var(--muted);font-size:13px}
 body.embed header nav, body.embed .banner{display:none}
+.lang{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.related{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;white-space:normal}
+.related span{font-size:11px;color:var(--muted);align-self:center}
+.related button{background:var(--chip);color:var(--chip-ink);border:1px solid transparent;border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+.related button:hover{border-color:var(--chip-ink)}
+.src{display:block;margin:3px 0}
+.src .show{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;margin-left:6px}
+.passage{background:var(--bg);border-left:3px solid var(--brand);padding:8px 10px;margin:6px 0;font-size:13px;white-space:pre-wrap;max-height:220px;overflow:auto;color:var(--ink)}
+.passage mark{background:#ffe58a;color:#1a2230;padding:0 2px;border-radius:2px}
+.video{margin-top:8px;font-size:12px;color:var(--muted);white-space:normal}
+.capture{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0}
+.capture h3{margin:0 0 4px;font-size:15px}
+.capture p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.capture .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.capture .g{grid-template-columns:1fr}}
+.capture input{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;background:var(--bg);color:var(--ink);width:100%}
+.capture button{margin-top:8px;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}
+.capture .ok{color:#1d7a3a;font-size:13px;margin-top:6px}
+.foot a{color:var(--chip-ink);text-decoration:none}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">?</div>
   <div><h1>Ask SIPA</h1><p class="sub" id="subtitle">Best Practices, answered in plain English, with page citations</p></div>
-  <nav><a href="embed.html">Embed</a><a href="qr.html">QR</a><a href="admin.html">Usage</a></nav>
+  <nav><button class="lang" id="lang" title="English / Español">ES</button><a href="embed.html">Embed</a><a href="qr.html">QR</a><a href="admin.html">Usage</a></nav>
 </header>
 <main>
-  <div class="banner"><strong>Concept demo.</strong> Not an official SIPA product. Answers come only from public SIPA documents (Need to Know, Builder and Design Best Practices, BEST lessons, installation guidelines) and always defer to your panel manufacturer and local code.</div>
+  <div class="banner" id="banner"><strong>Concept demo.</strong> Not an official SIPA product. Answers come only from public SIPA documents (Need to Know, Builder and Design Best Practices, BEST lessons, installation guidelines) and always defer to your panel manufacturer and local code.</div>
   <div id="chat"></div>
   <div class="starters" id="starters"></div>
   <p class="typing" id="typing" hidden>Looking it up in the SIPA documents...</p>
+  <div class="capture" id="capture" hidden>
+    <h3 id="capH">Get the Quick Start on your phone</h3>
+    <p id="capP">Leave your contact and your panel manufacturer can send you the Quick Start sheet, the Best Practices link, and the tech support number for this job.</p>
+    <div class="g">
+      <input id="cName" placeholder="Name" autocomplete="name">
+      <input id="cCompany" placeholder="Company" autocomplete="organization">
+      <input id="cPhone" placeholder="Mobile (for text)" autocomplete="tel">
+      <input id="cEmail" placeholder="Email" autocomplete="email">
+    </div>
+    <button id="cSend">Send me the Quick Start</button>
+    <div class="ok" id="cOk" hidden></div>
+  </div>
 </main>
 <div class="composer">
   <div class="row">
@@ -76,7 +107,7 @@ body.embed header nav, body.embed .banner{display:none}
     <button class="btn send" id="send">Ask</button>
   </div>
   <div class="foot">
-    <span id="mfrline"></span>
+    <span id="mfrline"></span><a href="#" id="capLink">Get the Quick Start on your phone</a>
     <label><input type="checkbox" id="speak"> Read answers aloud</label>
   </div>
 </div>
@@ -90,6 +121,26 @@ body.embed header nav, body.embed .banner{display:none}
   const DOCS=window.ASK_SIPA_DOCS||{};
   const chat=document.getElementById('chat'), q=document.getElementById('q'), send=document.getElementById('send'), mic=document.getElementById('mic'), typing=document.getElementById('typing'), starters=document.getElementById('starters'), speak=document.getElementById('speak');
   const history=[];
+  let lang=(params.get('lang')==='es')?'es':'en';
+  const T={
+    en:{sub:'Best Practices, answered in plain English, with page citations',ph:'Ask a jobsite question, like: how do I seal the panel to plate joint?',ask:'Ask',typing:'Looking it up in the SIPA documents...',speak:'Read answers aloud',related:'Ask next:',sources:'Sources:',show:'show passage',hide:'hide',video:'Video for this topic: coming in phase 2 (short jobsite clips linked from each answer).',gap:'Logged as an unanswered question so SIPA can see the gap.',capH:'Get the Quick Start on your phone',capP:'Leave your contact and your panel manufacturer can send you the Quick Start sheet, the Best Practices link, and the tech support number for this job.',capBtn:'Send me the Quick Start',capOk:'Saved. Your manufacturer will follow up. (Demo: nothing is sent yet.)',capLink:'Get the Quick Start on your phone',name:'Name',company:'Company',phone:'Mobile (for text)',email:'Email',langBtn:'ES',
+      starters:['How do I seal the panel to plate joint?','Can I run plumbing inside an exterior SIP wall?','How do I run wiring through SIP walls?','What should I check when the panels arrive on site?','How long can a SIP roof panel span?','What goes in a preconstruction meeting for a SIP job?']},
+    es:{sub:'Mejores Prácticas de SIPA, en español claro, con la página citada',ph:'Haga una pregunta de obra, por ejemplo: ¿cómo sello la junta entre panel y solera?',ask:'Preguntar',typing:'Buscando en los documentos de SIPA...',speak:'Leer respuestas en voz alta',related:'Pregunte después:',sources:'Fuentes:',show:'ver pasaje',hide:'ocultar',video:'Video de este tema: fase 2 (clips cortos de obra enlazados desde cada respuesta).',gap:'Registrada como pregunta sin respuesta para que SIPA vea el vacío.',capH:'Reciba la Guía Rápida en su teléfono',capP:'Deje su contacto y el fabricante de paneles le enviará la Guía Rápida, el enlace a Mejores Prácticas y el número de soporte técnico de esta obra.',capBtn:'Enviarme la Guía Rápida',capOk:'Guardado. Su fabricante le dará seguimiento. (Demo: todavía no se envía nada.)',capLink:'Reciba la Guía Rápida en su teléfono',name:'Nombre',company:'Empresa',phone:'Celular (para texto)',email:'Correo',langBtn:'EN',
+      starters:['¿Cómo sello la junta entre el panel y la solera?','¿Puedo poner plomería dentro de un muro SIP exterior?','¿Cómo paso el cableado eléctrico por los muros SIP?','¿Qué debo revisar cuando llegan los paneles a la obra?','¿Cuánto puede abarcar un panel SIP de techo?','¿Qué se trata en la reunión previa a la construcción de un proyecto SIP?']}
+  };
+  function applyLang(){
+    const t=T[lang]; document.documentElement.lang=lang;
+    if(!mfr) document.getElementById('subtitle').textContent=t.sub;
+    q.placeholder=t.ph; send.textContent=t.ask; typing.textContent=t.typing;
+    speak.parentElement.lastChild.textContent=' '+t.speak;
+    document.getElementById('lang').textContent=t.langBtn;
+    document.getElementById('capH').textContent=t.capH; document.getElementById('capP').textContent=t.capP;
+    document.getElementById('cSend').textContent=t.capBtn; document.getElementById('capLink').textContent=t.capLink;
+    document.getElementById('cName').placeholder=t.name; document.getElementById('cCompany').placeholder=t.company;
+    document.getElementById('cPhone').placeholder=t.phone; document.getElementById('cEmail').placeholder=t.email;
+    if(starters.isConnected){starters.innerHTML='';t.starters.forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>ask(s);starters.appendChild(b);});}
+  }
+  document.getElementById('lang').onclick=()=>{lang=lang==='en'?'es':'en';applyLang();};
   const STARTERS=[
     'How do I seal the panel to plate joint?',
     'Can I run plumbing inside an exterior SIP wall?',
@@ -98,11 +149,12 @@ body.embed header nav, body.embed .banner{display:none}
     'How long can a SIP roof panel span?',
     'What goes in a preconstruction meeting for a SIP job?',
   ];
-  STARTERS.forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>ask(s);starters.appendChild(b);});
+  applyLang();
 
   function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
   function render(text){
     let noAnswer=text.includes('[[NO_ANSWER]]');
+    let related=[]; text=text.replace(/\n?\s*RELATED:\s*(.+)\s*$/i,(m,r)=>{related=r.split('|').map(x=>x.trim()).filter(Boolean).slice(0,3);return '';});
     let t=esc(text.replace('[[NO_ANSWER]]','').trim());
     const seen=new Map();
     t=t.replace(/\[([A-Za-z0-9-]+) p\.(\d+)\]/g,(m,id,p)=>{
@@ -114,8 +166,11 @@ body.embed header nav, body.embed .banner{display:none}
     t=t.replace(/^#{1,6}\s+(.+)$/gm,'<strong>$1</strong>');
     t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
     let html=t;
-    if(seen.size){html+='<div class="sources">Sources: '+[...seen.values()].map(s=>'<a target="_blank" rel="noopener" href="'+s.d.url+'#page='+s.p+'">'+esc(s.d.title)+' (p.'+s.p+')</a>').join(' &middot; ')+'</div>';}
-    if(noAnswer){html+='<div class="noanswer">Logged as an unanswered question so SIPA can see the gap.</div>';}
+    const tt=T[lang];
+    if(seen.size){html+='<div class="sources">'+tt.sources+' '+[...seen.values()].map(s=>'<span class="src"><a target="_blank" rel="noopener" href="'+s.d.url+'#page='+s.p+'">'+esc(s.d.title)+' (p.'+s.p+')</a><span class="show" data-doc="'+s.id+'" data-p="'+s.p+'">'+tt.show+'</span><div class="passage" hidden></div></span>').join('')+'</div>';}
+    if(related.length){html+='<div class="related"><span>'+tt.related+'</span>'+related.map(r=>'<button data-q="'+esc(r).replace(/"/g,'&quot;')+'">'+esc(r)+'</button>').join('')+'</div>';}
+    html+='<div class="video">&#9654; '+tt.video+'</div>';
+    if(noAnswer){html+='<div class="noanswer">'+tt.gap+'</div>';}
     return html;
   }
   function add(role,html){
@@ -131,11 +186,21 @@ body.embed header nav, body.embed .banner{display:none}
     const body=add('bot','');
     let full='';
     try{
-      const r=await fetch('api/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,mfr})});
+      const r=await fetch('api/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,mfr,lang})});
       if(!r.ok){body.textContent='Sorry, the server had a problem ('+r.status+'). '+(await r.text()).slice(0,200);throw 0;}
       const reader=r.body.getReader(),dec=new TextDecoder();
       while(true){const {done,value}=await reader.read();if(done)break;full+=dec.decode(value,{stream:true});body.textContent=full.replace('[[NO_ANSWER]]','');body.scrollIntoView({block:'end'});}
       body.innerHTML=render(full);history.push({role:'assistant',content:full});
+      body.querySelectorAll('.related button').forEach(b=>b.onclick=()=>ask(b.dataset.q));
+      body.querySelectorAll('.show').forEach(sh=>sh.onclick=async()=>{
+        const box=sh.nextElementSibling; if(!box.hidden){box.hidden=true;sh.textContent=T[lang].show;return;}
+        if(!box.dataset.loaded){try{const r=await fetch('api/page?doc='+encodeURIComponent(sh.dataset.doc)+'&p='+sh.dataset.p);const j=await r.json();let txt=esc(j.text||'');
+          const phrases=[...full.matchAll(/"([^"]{8,120})"/g)].map(m=>m[1]).concat(full.replace(/\[[^\]]*\]/g,'').split(/[.\n]/).map(x=>x.trim()).filter(x=>x.length>30).map(x=>x.slice(0,40)));
+          phrases.forEach(ph=>{const e=esc(ph).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');txt=txt.replace(new RegExp(e,'i'),m=>'<mark>'+m+'</mark>');});
+          box.innerHTML=txt;box.dataset.loaded='1';}catch{box.textContent='Could not load the page text.';}}
+        box.hidden=false;sh.textContent=T[lang].hide;
+      });
+      document.getElementById('capture').hidden=false;
       if(speak.checked&&'speechSynthesis'in window){const u=new SpeechSynthesisUtterance(full.replace(/\[[^\]]*\]/g,'').replace(/\*\*/g,''));speechSynthesis.cancel();speechSynthesis.speak(u);}
     }catch(e){ if(!body.textContent) body.textContent='Network problem. Try again.'; }
     finally{send.disabled=false;typing.hidden=true;body.scrollIntoView({block:'end'});}
@@ -144,6 +209,16 @@ body.embed header nav, body.embed .banner{display:none}
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}});
   q.addEventListener('input',()=>{q.style.height='';q.style.height=Math.min(q.scrollHeight,140)+'px';});
 
+  // Installer contact capture (Bryan's items 6 and 7)
+  document.getElementById('capLink').onclick=e=>{e.preventDefault();const c=document.getElementById('capture');c.hidden=false;c.scrollIntoView({behavior:'smooth'});};
+  document.getElementById('cSend').onclick=async()=>{
+    const g=id=>document.getElementById(id).value.trim();
+    const rec={name:g('cName'),company:g('cCompany'),phone:g('cPhone'),email:g('cEmail'),mfr,lang};
+    const ok=document.getElementById('cOk');
+    if(!rec.name||(!rec.phone&&!rec.email)){ok.hidden=false;ok.textContent=lang==='es'?'Necesitamos su nombre y un celular o correo.':'Need your name and a mobile or email.';return;}
+    try{await fetch('api/installer',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(rec)});ok.hidden=false;ok.textContent=T[lang].capOk;}catch{ok.hidden=false;ok.textContent='Network problem.';}
+  };
+
   // Voice input: browser speech recognition, no server cost
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){mic.disabled=true;mic.title='Voice input is not supported in this browser';}
@@ -151,7 +226,7 @@ body.embed header nav, body.embed .banner{display:none}
     let rec=null;
     mic.onclick=()=>{
       if(rec){rec.stop();return;}
-      rec=new SR();rec.lang=/es/.test(navigator.language)?'es-US':'en-US';rec.interimResults=true;
+      rec=new SR();rec.lang=lang==='es'?'es-US':'en-US';rec.interimResults=true;
       mic.classList.add('live');
       rec.onresult=e=>{let s='';for(const r of e.results)s+=r[0].transcript;q.value=s;};
       rec.onend=()=>{mic.classList.remove('live');rec=null;if(q.value.trim())ask();};
