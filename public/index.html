@@ -51,6 +51,7 @@ textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padd
 .btn.mic.live{background:var(--danger);color:#fff;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.6}}
 .btn:disabled{opacity:.5;cursor:default}
+.micstatus{max-width:760px;margin:6px auto 0;font-size:12px;color:var(--danger);font-weight:600}
 .foot{max-width:760px;margin:6px auto 0;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .foot label{cursor:pointer}
 .foot select{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);padding:2px 4px}
@@ -264,21 +265,60 @@ body.embed header nav, body.embed .banner{display:none}
     };
   })();
 
-  // Voice input: browser speech recognition, no server cost
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){mic.disabled=true;mic.title='Voice input is not supported in this browser';}
-  else{
-    let rec=null;
-    mic.onclick=()=>{
-      if(rec){rec.stop();return;}
-      rec=new SR();rec.lang=lang==='es'?'es-US':'en-US';rec.interimResults=true;
-      mic.classList.add('live');
-      rec.onresult=e=>{let s='';for(const r of e.results)s+=r[0].transcript;q.value=s;};
-      rec.onend=()=>{mic.classList.remove('live');rec=null;if(q.value.trim())ask();};
-      rec.onerror=()=>{mic.classList.remove('live');rec=null;};
-      rec.start();
+  // ---- Voice input. Tap to start, tap again to stop. Records on the device and transcribes on the server
+  // (works on every browser and inside embeds). Falls back to the browser's own recognition if the server has no key.
+  const micStatus=document.createElement('div'); micStatus.className='micstatus'; micStatus.hidden=true; document.querySelector('.composer .row').after(micStatus);
+  const MS={en:{listen:'Listening... tap the mic again when you are done.',work:'Writing that down...',denied:'Microphone blocked. Allow the mic for this site in your browser settings, then try again.',short:'Did not catch that. Tap the mic and speak for a second or two.',fail:'Voice input failed. Type the question instead.'},
+            es:{listen:'Escuchando... toque el micrófono de nuevo cuando termine.',work:'Anotando...',denied:'Micrófono bloqueado. Permita el micrófono para este sitio en su navegador e intente de nuevo.',short:'No se escuchó. Toque el micrófono y hable uno o dos segundos.',fail:'Falló la entrada de voz. Escriba la pregunta.'}};
+  function say(k){micStatus.hidden=false;micStatus.textContent=MS[lang][k];}
+  function hush(){micStatus.hidden=true;}
+  let recorder=null, chunks=[], stream=null, startedAt=0;
+  async function serverMode(){ if(serverMode.v!==undefined) return serverMode.v; try{const r=await fetch('api/transcribe',{method:'POST',body:new FormData()}); serverMode.v = r.status!==501;}catch{serverMode.v=false;} return serverMode.v; }
+  async function startRec(){
+    try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+    catch(e){ say('denied'); return; }
+    const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'].find(m=>window.MediaRecorder&&MediaRecorder.isTypeSupported(m))||'';
+    chunks=[]; recorder=new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+    recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+    recorder.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop()); mic.classList.remove('live');
+      const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
+      if(Date.now()-startedAt<700||blob.size<2000){say('short');setTimeout(hush,3000);return;}
+      say('work');
+      try{
+        const fd=new FormData(); fd.append('audio',blob,'q.webm'); fd.append('lang',lang);
+        const r=await fetch('api/transcribe',{method:'POST',body:fd});
+        if(!r.ok) throw 0;
+        const j=await r.json(); hush();
+        if(j.text){q.value=j.text;ask();} else {say('short');setTimeout(hush,3000);}
+      }catch{ say('fail'); setTimeout(hush,4000); }
     };
+    recorder.start(); startedAt=Date.now(); mic.classList.add('live'); say('listen');
+    // safety stop at 30 seconds
+    setTimeout(()=>{if(recorder&&recorder.state==='recording')recorder.stop();},30000);
   }
+  function stopRec(){ if(recorder&&recorder.state==='recording') recorder.stop(); }
+
+  // Browser fallback (Web Speech API)
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let rec=null;
+  function browserRec(){
+    if(!SR){say('fail');setTimeout(hush,3000);return;}
+    if(rec){rec.stop();return;}
+    rec=new SR();rec.lang=lang==='es'?'es-US':'en-US';rec.interimResults=true;rec.continuous=false;
+    mic.classList.add('live'); say('listen');
+    rec.onresult=e=>{let s='';for(const r of e.results)s+=r[0].transcript;q.value=s;};
+    rec.onend=()=>{mic.classList.remove('live');rec=null;hush();if(q.value.trim())ask();};
+    rec.onerror=e=>{mic.classList.remove('live');rec=null;say(e.error==='not-allowed'?'denied':(e.error==='no-speech'?'short':'fail'));setTimeout(hush,4000);};
+    rec.start();
+  }
+
+  const canRecord=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
+  mic.onclick=async()=>{
+    Speech.stop();
+    if(canRecord && await serverMode()){ if(recorder&&recorder.state==='recording') stopRec(); else startRec(); }
+    else browserRec();
+  };
 })();
 </script>
 </body>
