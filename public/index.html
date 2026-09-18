@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ask SIPA</title>
+<meta name="description" content="Plain-English answers from SIPA Best Practices, with page citations. Concept demo.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f4e79'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>?</text></svg>">
+<style>
+:root{
+  --bg:#f4f6f8;--card:#fff;--ink:#1a2230;--muted:#5b6675;--line:#dfe4ea;
+  --brand:#1f4e79;--brand-ink:#fff;--accent:#e8a33d;--user:#e9f0f7;--chip:#eef3f8;--chip-ink:#1f4e79;--danger:#b23b3b;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0f141a;--card:#161d26;--ink:#e8edf2;--muted:#9aa6b4;--line:#28323e;--brand:#3b78b5;--user:#1d2a38;--chip:#1d2a38;--chip-ink:#9cc3ea;}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column}
+header{background:var(--brand);color:var(--brand-ink);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+header .logo{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-weight:800;font-size:18px}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+header .sub{font-size:12px;opacity:.85;margin:0}
+header nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+header nav a{color:#fff;text-decoration:none;font-size:12px;padding:6px 9px;border:1px solid rgba(255,255,255,.35);border-radius:999px;white-space:nowrap}
+main{flex:1;max-width:760px;width:100%;margin:0 auto;padding:16px 16px 140px}
+.banner{background:#fff6e5;border:1px solid #f1d9a8;color:#5a4200;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .banner{background:#2a2213;border-color:#4a3a14;color:#f1d9a8}}
+.msg{display:flex;gap:10px;margin:10px 0;animation:in .2s ease}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg .who{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.msg.user .who{background:var(--user);color:var(--brand)}
+.msg.bot .who{background:var(--brand);color:#fff}
+.msg .body{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;max-width:100%;flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.user .body{background:var(--user);border-color:transparent}
+.msg .body ol,.msg .body ul{margin:6px 0 6px 18px;padding:0;white-space:normal}
+.cite{display:inline-block;background:var(--chip);color:var(--chip-ink);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:600;text-decoration:none;margin:0 2px;border:1px solid transparent;white-space:nowrap}
+.cite:hover{border-color:var(--chip-ink)}
+.sources{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);white-space:normal}
+.sources a{color:var(--chip-ink);text-decoration:none}
+.noanswer{color:var(--danger);font-size:12px;margin-top:6px}
+.starters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 4px}
+@media (max-width:480px){.starters{grid-template-columns:1fr}}
+.starters button{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.starters button:hover{border-color:var(--brand)}
+.composer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.composer .row{max-width:760px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--ink);min-height:44px;max-height:140px}
+.btn{border:0;border-radius:12px;min-width:46px;height:46px;font:inherit;font-weight:700;cursor:pointer;display:grid;place-items:center}
+.btn.send{background:var(--brand);color:#fff;padding:0 16px}
+.btn.mic{background:var(--chip);color:var(--chip-ink);font-size:20px}
+.btn.mic.live{background:var(--danger);color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.btn:disabled{opacity:.5;cursor:default}
+.foot{max-width:760px;margin:6px auto 0;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.foot label{cursor:pointer}
+.typing{color:var(--muted);font-size:13px}
+body.embed header nav, body.embed .banner{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">?</div>
+  <div><h1>Ask SIPA</h1><p class="sub" id="subtitle">Best Practices, answered in plain English, with page citations</p></div>
+  <nav><a href="embed.html">Embed</a><a href="qr.html">QR</a><a href="admin.html">Usage</a></nav>
+</header>
+<main>
+  <div class="banner"><strong>Concept demo.</strong> Not an official SIPA product. Answers come only from public SIPA documents (Need to Know, Builder and Design Best Practices, BEST lessons, installation guidelines) and always defer to your panel manufacturer and local code.</div>
+  <div id="chat"></div>
+  <div class="starters" id="starters"></div>
+  <p class="typing" id="typing" hidden>Looking it up in the SIPA documents...</p>
+</main>
+<div class="composer">
+  <div class="row">
+    <button class="btn mic" id="mic" title="Ask by voice" aria-label="Ask by voice">&#127908;</button>
+    <textarea id="q" rows="1" placeholder="Ask a jobsite question, like: how do I seal the panel to plate joint?"></textarea>
+    <button class="btn send" id="send">Ask</button>
+  </div>
+  <div class="foot">
+    <span id="mfrline"></span>
+    <label><input type="checkbox" id="speak"> Read answers aloud</label>
+  </div>
+</div>
+<script src="docs.js"></script>
+<script>
+(function(){
+  const params=new URLSearchParams(location.search);
+  const mfr=(params.get('mfr')||'').slice(0,40);
+  if(params.get('embed')==='1') document.body.classList.add('embed');
+  if(mfr){document.getElementById('mfrline').textContent='Provided by '+mfr+' with SIPA Best Practices';document.getElementById('subtitle').textContent=mfr+' installer helper';}
+  const DOCS=window.ASK_SIPA_DOCS||{};
+  const chat=document.getElementById('chat'), q=document.getElementById('q'), send=document.getElementById('send'), mic=document.getElementById('mic'), typing=document.getElementById('typing'), starters=document.getElementById('starters'), speak=document.getElementById('speak');
+  const history=[];
+  const STARTERS=[
+    'How do I seal the panel to plate joint?',
+    'Can I run plumbing inside an exterior SIP wall?',
+    'How do I run wiring through SIP walls?',
+    'What should I check when the panels arrive on site?',
+    'How long can a SIP roof panel span?',
+    'What goes in a preconstruction meeting for a SIP job?',
+  ];
+  STARTERS.forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>ask(s);starters.appendChild(b);});
+
+  function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+  function render(text){
+    let noAnswer=text.includes('[[NO_ANSWER]]');
+    let t=esc(text.replace('[[NO_ANSWER]]','').trim());
+    const seen=new Map();
+    t=t.replace(/\[([A-Za-z0-9-]+) p\.(\d+)\]/g,(m,id,p)=>{
+      const d=DOCS[id]; if(!d) return m;
+      const key=id+':'+p; if(!seen.has(key)) seen.set(key,{id,p,d});
+      const label=id.replace('-Installation','').replace('-Electrical','').replace('-Structural','').replace('-Shop-Drawings','');
+      return '<a class="cite" target="_blank" rel="noopener" href="'+d.url+'#page='+p+'" title="'+esc(d.title)+', page '+p+'">'+label+' p.'+p+'</a>';
+    });
+    t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    let html=t;
+    if(seen.size){html+='<div class="sources">Sources: '+[...seen.values()].map(s=>'<a target="_blank" rel="noopener" href="'+s.d.url+'#page='+s.p+'">'+esc(s.d.title)+' (p.'+s.p+')</a>').join(' &middot; ')+'</div>';}
+    if(noAnswer){html+='<div class="noanswer">Logged as an unanswered question so SIPA can see the gap.</div>';}
+    return html;
+  }
+  function add(role,html){
+    const m=document.createElement('div');m.className='msg '+role;
+    m.innerHTML='<div class="who">'+(role==='user'?'You':'S')+'</div><div class="body">'+html+'</div>';
+    chat.appendChild(m);m.scrollIntoView({block:'end',behavior:'smooth'});return m.querySelector('.body');
+  }
+  async function ask(text){
+    text=(text||q.value).trim(); if(!text) return;
+    q.value='';q.style.height='';starters.remove();
+    add('user',esc(text));history.push({role:'user',content:text});
+    send.disabled=true;typing.hidden=false;
+    const body=add('bot','');
+    let full='';
+    try{
+      const r=await fetch('api/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,mfr})});
+      if(!r.ok){body.textContent='Sorry, the server had a problem ('+r.status+'). '+(await r.text()).slice(0,200);throw 0;}
+      const reader=r.body.getReader(),dec=new TextDecoder();
+      while(true){const {done,value}=await reader.read();if(done)break;full+=dec.decode(value,{stream:true});body.textContent=full.replace('[[NO_ANSWER]]','');body.scrollIntoView({block:'end'});}
+      body.innerHTML=render(full);history.push({role:'assistant',content:full});
+      if(speak.checked&&'speechSynthesis'in window){const u=new SpeechSynthesisUtterance(full.replace(/\[[^\]]*\]/g,'').replace(/\*\*/g,''));speechSynthesis.cancel();speechSynthesis.speak(u);}
+    }catch(e){ if(!body.textContent) body.textContent='Network problem. Try again.'; }
+    finally{send.disabled=false;typing.hidden=true;body.scrollIntoView({block:'end'});}
+  }
+  send.onclick=()=>ask();
+  q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}});
+  q.addEventListener('input',()=>{q.style.height='';q.style.height=Math.min(q.scrollHeight,140)+'px';});
+
+  // Voice input: browser speech recognition, no server cost
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){mic.disabled=true;mic.title='Voice input is not supported in this browser';}
+  else{
+    let rec=null;
+    mic.onclick=()=>{
+      if(rec){rec.stop();return;}
+      rec=new SR();rec.lang=/es/.test(navigator.language)?'es-US':'en-US';rec.interimResults=true;
+      mic.classList.add('live');
+      rec.onresult=e=>{let s='';for(const r of e.results)s+=r[0].transcript;q.value=s;};
+      rec.onend=()=>{mic.classList.remove('live');rec=null;if(q.value.trim())ask();};
+      rec.onerror=()=>{mic.classList.remove('live');rec=null;};
+      rec.start();
+    };
+  }
+})();
+</script>
+</body>
+</html>

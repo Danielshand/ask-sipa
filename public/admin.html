@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask SIPA usage</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1a2230;--muted:#5b6675;--line:#dfe4ea;--brand:#1f4e79;--danger:#b23b3b}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f141a;--card:#161d26;--ink:#e8edf2;--muted:#9aa6b4;--line:#28323e;--brand:#3b78b5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+header a{color:#fff;text-decoration:none;font-weight:700}
+main{max-width:860px;margin:0 auto;padding:16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.tile b{display:block;font-size:28px;line-height:1.1}
+.tile span{font-size:13px;color:var(--muted)}
+h2{font-size:18px;margin:20px 0 8px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.gap{color:var(--danger);font-weight:700}
+.muted{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header><a href="./">&larr; Ask SIPA</a><span>Usage: how SIPA knows it is working</span></header>
+<main>
+  <p class="muted">This is the "method to ensure it is happening" from Bryan's write-up. Every question is counted, by manufacturer when it came through an embed, and questions the documents could not answer are flagged so the Best Practices series can be improved.</p>
+  <div class="tiles">
+    <div class="tile"><b id="total">-</b><span>questions, all time</span></div>
+    <div class="tile"><b id="today">-</b><span>questions today</span></div>
+    <div class="tile"><b id="gaps">-</b><span>unanswered (content gaps)</span></div>
+    <div class="tile"><b id="docs">-</b><span>documents in the corpus</span></div>
+  </div>
+  <p class="muted" id="note"></p>
+  <h2>By manufacturer</h2>
+  <table id="mfr"><tr><th>Manufacturer embed</th><th>Questions</th></tr></table>
+  <h2>Recent questions</h2>
+  <table id="recent"><tr><th>When</th><th>Question</th><th>Via</th><th>Answered</th></tr></table>
+  <h2>Documents the tool answers from</h2>
+  <table id="corpus"><tr><th>Document</th><th>Pages</th></tr></table>
+</main>
+<script>
+fetch('api/stats').then(r=>r.json()).then(s=>{
+  const $=id=>document.getElementById(id);
+  $('total').textContent=s.total;$('today').textContent=s.today;$('docs').textContent=s.corpus.length;
+  $('gaps').textContent=s.recent.filter(r=>r.noAnswer).length;
+  if(s.note)$('note').textContent=s.note;
+  const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const m=Object.entries(s.byManufacturer);
+  $('mfr').insertAdjacentHTML('beforeend',m.length?m.map(([k,v])=>'<tr><td>'+esc(k)+'</td><td>'+v+'</td></tr>').join(''):'<tr><td colspan=2 class=muted>No embed traffic yet</td></tr>');
+  $('recent').insertAdjacentHTML('beforeend',s.recent.length?s.recent.slice(0,50).map(r=>'<tr><td>'+new Date(r.t).toLocaleString()+'</td><td>'+esc(r.q)+'</td><td>'+esc(r.mfr||'sips.org')+'</td><td>'+(r.noAnswer?'<span class=gap>gap</span>':'yes')+'</td></tr>').join(''):'<tr><td colspan=4 class=muted>No questions yet</td></tr>');
+  $('corpus').insertAdjacentHTML('beforeend',s.corpus.map(d=>'<tr><td><a href="'+d.url+'" target="_blank" rel="noopener">'+esc(d.title)+'</a></td><td>'+d.pages+'</td></tr>').join(''));
+}).catch(()=>{document.getElementById('note').textContent='Stats endpoint not reachable (run through Cloudflare Pages or wrangler dev).';});
+</script>
+</body>
+</html>
