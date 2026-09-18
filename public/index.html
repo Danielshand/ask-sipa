@@ -106,11 +106,12 @@ body.embed header nav, body.embed .banner{display:none}
     let t=esc(text.replace('[[NO_ANSWER]]','').trim());
     const seen=new Map();
     t=t.replace(/\[([A-Za-z0-9-]+) p\.(\d+)\]/g,(m,id,p)=>{
-      const d=DOCS[id]; if(!d) return m;
+      const d=DOCS[id]; if(!d) return m; if(+p<1||+p>d.pages) return '';
       const key=id+':'+p; if(!seen.has(key)) seen.set(key,{id,p,d});
       const label=id.replace('-Installation','').replace('-Electrical','').replace('-Structural','').replace('-Shop-Drawings','');
       return '<a class="cite" target="_blank" rel="noopener" href="'+d.url+'#page='+p+'" title="'+esc(d.title)+', page '+p+'">'+label+' p.'+p+'</a>';
     });
+    t=t.replace(/^#{1,6}\s+(.+)$/gm,'<strong>$1</strong>');
     t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
     let html=t;
     if(seen.size){html+='<div class="sources">Sources: '+[...seen.values()].map(s=>'<a target="_blank" rel="noopener" href="'+s.d.url+'#page='+s.p+'">'+esc(s.d.title)+' (p.'+s.p+')</a>').join(' &middot; ')+'</div>';}
