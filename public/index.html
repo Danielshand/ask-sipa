@@ -180,16 +180,18 @@ body.embed header nav, body.embed .banner{display:none}
   }
   async function ask(text){
     text=(text||q.value).trim(); if(!text) return;
-    q.value='';q.style.height='';starters.remove();
+    q.value='';q.style.height='';starters.remove();Speech.stop();
     add('user',esc(text));history.push({role:'user',content:text});
     send.disabled=true;typing.hidden=false;
     const body=add('bot','');
     let full='';
+    if(speak.checked) Speech.start();
     try{
       const r=await fetch('api/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,mfr,lang})});
       if(!r.ok){body.textContent='Sorry, the server had a problem ('+r.status+'). '+(await r.text()).slice(0,200);throw 0;}
       const reader=r.body.getReader(),dec=new TextDecoder();
-      while(true){const {done,value}=await reader.read();if(done)break;full+=dec.decode(value,{stream:true});body.textContent=full.replace('[[NO_ANSWER]]','');body.scrollIntoView({block:'end'});}
+      while(true){const {done,value}=await reader.read();if(done)break;const d=dec.decode(value,{stream:true});full+=d;if(speak.checked)Speech.feed(d);body.textContent=full.replace('[[NO_ANSWER]]','');body.scrollIntoView({block:'end'});}
+      if(speak.checked)Speech.finish();
       body.innerHTML=render(full);history.push({role:'assistant',content:full});
       body.querySelectorAll('.related button').forEach(b=>b.onclick=()=>ask(b.dataset.q));
       body.querySelectorAll('.show').forEach(sh=>sh.onclick=async()=>{
@@ -201,10 +203,10 @@ body.embed header nav, body.embed .banner{display:none}
         box.hidden=false;sh.textContent=T[lang].hide;
       });
       document.getElementById('capture').hidden=false;
-      if(speak.checked&&'speechSynthesis'in window){const u=new SpeechSynthesisUtterance(full.replace(/\[[^\]]*\]/g,'').replace(/\*\*/g,''));speechSynthesis.cancel();speechSynthesis.speak(u);}
     }catch(e){ if(!body.textContent) body.textContent='Network problem. Try again.'; }
     finally{send.disabled=false;typing.hidden=true;body.scrollIntoView({block:'end'});}
   }
+  speak.addEventListener('change',()=>{if(!speak.checked)Speech.stop();});
   send.onclick=()=>ask();
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}});
   q.addEventListener('input',()=>{q.style.height='';q.style.height=Math.min(q.scrollHeight,140)+'px';});
@@ -218,6 +220,46 @@ body.embed header nav, body.embed .banner{display:none}
     if(!rec.name||(!rec.phone&&!rec.email)){ok.hidden=false;ok.textContent=lang==='es'?'Necesitamos su nombre y un celular o correo.':'Need your name and a mobile or email.';return;}
     try{await fetch('api/installer',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(rec)});ok.hidden=false;ok.textContent=T[lang].capOk;}catch{ok.hidden=false;ok.textContent='Network problem.';}
   };
+
+
+  // ---- Read aloud: neural voice via /api/speak, streamed sentence by sentence, browser voice as fallback
+  const Speech=(()=>{
+    let neural=null;           // null = unknown, true/false after first try
+    let queue=[], playing=false, current=null, seq=0, buf='', active=0;
+    const ABBR={en:[[/\bSIPs\b/g,'sips'],[/\bSIP\b/g,'sip'],[/\bOSB\b/g,'O S B'],[/\bHVAC\b/g,'H V A C'],[/\bEPS\b/g,'E P S'],[/\bICC\b/g,'I C C'],[/\bBP-(\d+)/g,'Best Practices $1'],[/\bo\.c\.(?=\s|$)/gi,'on center.'],[/(\d)\s*"/g,'$1 inches'],[/(\d)\s*'/g,'$1 feet'],[/\bft\b/g,'feet'],[/\bin\.\b/g,'inches'],[/\bpsf\b/g,'pounds per square foot'],[/\bpsi\b/g,'p s i'],[/\bvs\.?\b/g,'versus'],[/\be\.g\.\b/g,'for example']],
+                es:[[/\bSIPs\b/g,'sips'],[/\bSIP\b/g,'sip'],[/\bOSB\b/g,'O S B'],[/\bHVAC\b/g,'H V A C'],[/(\d)\s*"/g,'$1 pulgadas'],[/(\d)\s*'/g,'$1 pies']]};
+    function clean(t){
+      t=t.replace(/\[\[NO_ANSWER\]\]/g,'').replace(/\n?\s*\**\s*RELATED:?\**:?.*$/i,'')
+         .replace(/\[[A-Za-z0-9-]+ p\.\d+\]/g,'').replace(/\*\*/g,'').replace(/^#{1,6}\s+/gm,'')
+         .replace(/^\s*(\d+[.)]|[-*•])\s+/gm,'').replace(/\s*:\s*$/gm,'.').replace(/[ \t]+/g,' ');
+      for(const [re,rep] of ABBR[lang]) t=t.replace(re,rep);
+      return t.trim();
+    }
+    async function fetchAudio(text){
+      if(neural===false) return null;
+      try{const r=await fetch('api/speak',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text,lang})});
+        if(r.status===501){neural=false;return null;} if(!r.ok) return null; neural=true; return URL.createObjectURL(await r.blob());
+      }catch{return null;}
+    }
+    function browserSay(text){return new Promise(res=>{if(!('speechSynthesis' in window)){res();return;}const u=new SpeechSynthesisUtterance(text);u.lang=lang==='es'?'es-US':'en-US';u.rate=0.95;u.onend=res;u.onerror=res;speechSynthesis.speak(u);});}
+    async function pump(){
+      if(playing) return; playing=true;
+      while(queue.length){
+        const item=queue.shift(); const url=await item.audio;
+        if(url){await new Promise(res=>{current=new Audio(url);current.onended=res;current.onerror=res;current.play().catch(res);}); URL.revokeObjectURL(url);}
+        else await browserSay(item.text);
+      }
+      playing=false;
+    }
+    function enqueue(sentence){const text=clean(sentence); if(text.length<3) return; queue.push({text,audio:fetchAudio(text)}); pump();}
+    return {
+      start(){this.stop();seq++;buf='';active=seq;},
+      // feed streamed text; speak each complete sentence as soon as it arrives
+      feed(delta){ if(active!==seq) return; buf+=delta; let m; while((m=buf.match(/^([\s\S]*?[.!?])(\s+|\n)/))){enqueue(m[1]);buf=buf.slice(m[0].length);} },
+      finish(){ if(buf.trim()) enqueue(buf); buf=''; },
+      stop(){ queue=[]; if(current){current.pause();current=null;} if('speechSynthesis' in window) speechSynthesis.cancel(); playing=false; seq++; active=0; }
+    };
+  })();
 
   // Voice input: browser speech recognition, no server cost
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
