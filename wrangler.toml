@@ -1,0 +1,14 @@
+name = "ask-sipa"
+compatibility_date = "2025-06-01"
+pages_build_output_dir = "public"
+
+# Optional usage counter. Create a KV namespace in the Cloudflare dashboard
+# (Workers & Pages > KV) named ask-sipa-usage, then paste its id below.
+# Without it the tool still answers; the Usage page just shows zeros.
+# [[kv_namespaces]]
+# binding = "ASK_SIPA_KV"
+# id = "PASTE_KV_NAMESPACE_ID"
+
+# Secrets are NOT stored here. Set in the dashboard or with:
+#   npx wrangler pages secret put ANTHROPIC_API_KEY
+# Optional plain variable: ANTHROPIC_MODEL (defaults to claude-sonnet-4-5)
