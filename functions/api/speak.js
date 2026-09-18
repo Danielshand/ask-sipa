@@ -16,6 +16,8 @@ export async function onRequestPost({ request, env }) {
   try { b = await request.json(); } catch { return new Response("Bad JSON", { status: 400 }); }
   const text = (typeof b.text === "string" ? b.text : "").trim().slice(0, 1200);
   const lang = b.lang === "es" ? "es" : "en";
+  const VOICES = ["alloy","ash","ballad","coral","echo","fable","onyx","nova","sage","shimmer"];
+  const voice = VOICES.includes(b.voice) ? b.voice : (env.OPENAI_TTS_VOICE || OPENAI_VOICE);
   if (!text) return new Response("No text", { status: 400 });
 
   if (env.OPENAI_API_KEY) {
@@ -24,7 +26,7 @@ export async function onRequestPost({ request, env }) {
       headers: { "authorization": "Bearer " + env.OPENAI_API_KEY, "content-type": "application/json" },
       body: JSON.stringify({
         model: env.OPENAI_TTS_MODEL || OPENAI_MODEL,
-        voice: env.OPENAI_TTS_VOICE || OPENAI_VOICE,
+        voice,
         input: text,
         instructions: STYLE[lang],
         response_format: "mp3",
