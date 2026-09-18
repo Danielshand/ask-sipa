@@ -2,7 +2,7 @@
 // Neural text-to-speech for the read-aloud feature. Uses OpenAI TTS if OPENAI_API_KEY is set,
 // ElevenLabs if ELEVENLABS_API_KEY is set. The page falls back to the browser voice if neither is set.
 
-const OPENAI_VOICE = "onyx";     // options: alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
+const OPENAI_VOICE = "nova";     // options: alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
 const OPENAI_MODEL = "gpt-4o-mini-tts";
 const ELEVEN_VOICE = "pNInz6obpgDQGcFmaJgB"; // "Adam" default; set ELEVENLABS_VOICE_ID to override
 
