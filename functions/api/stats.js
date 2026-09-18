@@ -2,7 +2,7 @@
 import corpus from "../../corpus/corpus.json";
 
 export async function onRequestGet({ env }) {
-  const out = { total: 0, today: 0, byManufacturer: {}, recent: [], corpus: [] };
+  const out = { total: 0, today: 0, byManufacturer: {}, recent: [], corpus: [], installers: [], spanish: 0 };
   out.corpus = corpus.map(d => ({ id: d.id, title: d.title, pages: d.pages.length, url: d.url }));
   if (env.ASK_SIPA_KV) {
     const kv = env.ASK_SIPA_KV;
@@ -10,6 +10,8 @@ export async function onRequestGet({ env }) {
     out.total = parseInt((await kv.get("count:total")) || "0", 10);
     out.today = parseInt((await kv.get("count:" + day)) || "0", 10);
     out.recent = JSON.parse((await kv.get("recent")) || "[]");
+    out.spanish = out.recent.filter(r => r.lang === "es").length;
+    out.installers = JSON.parse((await kv.get("installers")) || "[]").map(r => ({ t: r.t, name: r.name, company: r.company, mfr: r.mfr, lang: r.lang, contact: r.phone ? "phone" : "email" }));
     const list = await kv.list({ prefix: "mfr:" });
     for (const k of list.keys) out.byManufacturer[k.name.slice(4)] = parseInt((await kv.get(k.name)) || "0", 10);
   } else {

@@ -26,7 +26,8 @@ Rules:
 5. Always defer to the panel manufacturer's specifications, engineered shop drawings, and local code when they are stricter. Say this in one short line when the topic is structural, fire, sealant, fastening, plumbing, or electrical.
 6. Do not give advice that would void a manufacturer warranty. If a practice is a "don't" in the documents, say so clearly.
 7. Keep answers under 200 words unless the user asks for detail. Do not use markdown headings (no lines starting with #). Use bold for short labels and plain numbered or dashed lists.
-8. If the user writes in Spanish, answer in Spanish, keeping the same citation form.`;
+8. If the user writes in Spanish, or the request says lang=es, answer in Spanish, keeping the same citation form.
+9. After the answer, on the final line, write RELATED: followed by two or three short follow-up questions an installer might ask next, separated by | . Each must be answerable from the documents. Example: RELATED: How do I seal a panel-to-panel joint? | What sealant does SIPA recommend? | How are splines fastened?`;
 
 let cachedSystem = null;
 function systemBlocks() {
@@ -39,7 +40,7 @@ function systemBlocks() {
   return cachedSystem;
 }
 
-async function logUsage(env, question, mfr, noAnswer) {
+async function logUsage(env, question, mfr, noAnswer, lang) {
   if (!env.ASK_SIPA_KV) return;
   try {
     const kv = env.ASK_SIPA_KV;
@@ -53,7 +54,7 @@ async function logUsage(env, question, mfr, noAnswer) {
       await kv.put("mfr:" + mfr, String(m));
     }
     const recent = JSON.parse((await kv.get("recent")) || "[]");
-    recent.unshift({ t: Date.now(), q: question.slice(0, 200), mfr: mfr || "", noAnswer: !!noAnswer });
+    recent.unshift({ t: Date.now(), q: question.slice(0, 200), mfr: mfr || "", noAnswer: !!noAnswer, lang: lang || "en" });
     await kv.put("recent", JSON.stringify(recent.slice(0, 200)));
   } catch (e) {
     // logging must never break an answer
@@ -74,6 +75,8 @@ export async function onRequestPost({ request, env }) {
     return new Response("Need a user message", { status: 400 });
   }
   const mfr = typeof body.mfr === "string" ? body.mfr.slice(0, 40).replace(/[^\w .-]/g, "") : "";
+  const lang = body.lang === "es" ? "es" : "en";
+  if (lang === "es") messages[messages.length - 1].content = "(lang=es, responde en español) " + messages[messages.length - 1].content;
 
   const upstream = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -124,7 +127,7 @@ export async function onRequestPost({ request, env }) {
         }
       }
       controller.close();
-      await logUsage(env, question, mfr, full.includes("[[NO_ANSWER]]"));
+      await logUsage(env, question, mfr, full.includes("[[NO_ANSWER]]"), lang);
     },
   });
 
