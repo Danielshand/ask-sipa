@@ -53,6 +53,7 @@ textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padd
 .btn:disabled{opacity:.5;cursor:default}
 .foot{max-width:760px;margin:6px auto 0;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .foot label{cursor:pointer}
+.foot select{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);padding:2px 4px}
 .typing{color:var(--muted);font-size:13px}
 body.embed header nav, body.embed .banner{display:none}
 .lang{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
@@ -108,7 +109,7 @@ body.embed header nav, body.embed .banner{display:none}
   </div>
   <div class="foot">
     <span id="mfrline"></span><a href="#" id="capLink">Get the Quick Start on your phone</a>
-    <label><input type="checkbox" id="speak"> Read answers aloud</label>
+    <label><input type="checkbox" id="speak"> Read answers aloud</label> <select id="voice" title="Voice"><option value="onyx">Onyx (deep)</option><option value="echo">Echo (steady)</option><option value="ash">Ash (warm)</option><option value="sage">Sage (calm)</option><option value="coral">Coral (bright)</option><option value="nova">Nova (clear)</option></select>
   </div>
 </div>
 <script src="docs.js"></script>
@@ -132,7 +133,7 @@ body.embed header nav, body.embed .banner{display:none}
     const t=T[lang]; document.documentElement.lang=lang;
     if(!mfr) document.getElementById('subtitle').textContent=t.sub;
     q.placeholder=t.ph; send.textContent=t.ask; typing.textContent=t.typing;
-    speak.parentElement.lastChild.textContent=' '+t.speak;
+    speak.nextSibling.textContent=' '+t.speak;
     document.getElementById('lang').textContent=t.langBtn;
     document.getElementById('capH').textContent=t.capH; document.getElementById('capP').textContent=t.capP;
     document.getElementById('cSend').textContent=t.capBtn; document.getElementById('capLink').textContent=t.capLink;
@@ -207,6 +208,8 @@ body.embed header nav, body.embed .banner{display:none}
     finally{send.disabled=false;typing.hidden=true;body.scrollIntoView({block:'end'});}
   }
   speak.addEventListener('change',()=>{if(!speak.checked)Speech.stop();});
+  try{const v=localStorage.getItem('askSipaVoice');if(v)document.getElementById('voice').value=v;}catch{}
+  document.getElementById('voice').addEventListener('change',e=>{try{localStorage.setItem('askSipaVoice',e.target.value);}catch{}});
   send.onclick=()=>ask();
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}});
   q.addEventListener('input',()=>{q.style.height='';q.style.height=Math.min(q.scrollHeight,140)+'px';});
@@ -237,7 +240,7 @@ body.embed header nav, body.embed .banner{display:none}
     }
     async function fetchAudio(text){
       if(neural===false) return null;
-      try{const r=await fetch('api/speak',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text,lang})});
+      try{const r=await fetch('api/speak',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text,lang,voice:document.getElementById('voice').value})});
         if(r.status===501){neural=false;return null;} if(!r.ok) return null; neural=true; return URL.createObjectURL(await r.blob());
       }catch{return null;}
     }
