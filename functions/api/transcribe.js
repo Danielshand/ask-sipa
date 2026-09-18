@@ -11,7 +11,9 @@ export async function onRequestPost({ request, env }) {
   if (audio.size > 8 * 1024 * 1024) return new Response("Audio too large", { status: 413 });
 
   const out = new FormData();
-  out.append("file", audio, "question.webm");
+  const t = (audio.type || "").toLowerCase();
+  const ext = t.includes("mp4") || t.includes("m4a") ? "m4a" : t.includes("mpeg") || t.includes("mp3") ? "mp3" : t.includes("ogg") ? "ogg" : t.includes("wav") ? "wav" : "webm";
+  out.append("file", audio, "question." + ext);
   out.append("model", env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe");
   out.append("language", lang);
   out.append("prompt", lang === "es"
